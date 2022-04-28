@@ -270,17 +270,14 @@
 			
 			
 			var halfBd:Number = bmd2.height /2;
-			var o = false;
 
-
-			for (var row: Number = 1; row < bmd2.height; row++) {
+			for (var row: Number = halfBd; row < bmd2.height; row++) {
 				//looks best but does not make sense!
 				//var rowPer: Number = 1 - (bmd2.height / row);
 				//naive and looks like shit
-				//var rowPer: Number =  (row / bmd2.height);
+				//var rowPer: Number =  ( ((row - halfBd)/2) / halfBd);
 				//this makes most sense
-				var rowPer: Number = easeOutQuint(row/2,  0 , 1, bmd2.height);
-				var halfRow:int = row/2;
+				var rowPer: Number = easeOutQuint( (row - halfBd)/2,  0 , 1, halfBd);
 				//
 				//trace(rowPer);
 
@@ -299,12 +296,6 @@
 				currStartX += fromPStart.x;
 				currStartY += fromPStart.y;
 
-				if(!o)
-				{
-					o = true;
-					mc2.graphics.drawCircle(currStartX, currStartY, 3);
-				}
-				
 
 				if (endRowCos == -1) {
 					endRowCos = Math.cos(endRowsAngle);
@@ -346,7 +337,8 @@
 					currColY += cp1.y;
 					var pixel: uint = bd.getPixel(currColX, currColY);
 					//bmd2.setPixel(col,  row, pixel);
-					bmd2.setPixel(col, halfBd + halfRow, pixel);
+					//half bd is the start row in the center of the screen
+					bmd2.setPixel(col, row, pixel);
 
 				}
 
