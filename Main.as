@@ -22,7 +22,7 @@
 		var TURN_SPEED:Number = 0;
 		var TURN_INCREMENT:Number = 1;
 
-		var MAX_SPEED: Number = 5;
+		var MAX_SPEED: Number = 2;
 		var INCREMENT: Number = 0.1;
 		var SPEED: Number = 0;
 		var H: Number = 5;
@@ -42,8 +42,8 @@
 
 		var pos: Point = new Point(640 / 2, 480 / 2);
 		var angle: int = 0;
-		var near: Number = 25;
-		var far: Number = 55;
+		var near: Number = 20;
+		var far: Number = 200;
 		var fov_h: Number = 30;
 		
 		var stars:Array = [];
@@ -61,44 +61,9 @@
 			stage.addEventListener(KeyboardEvent.KEY_DOWN, myKeyDown);
 			stage.addEventListener(KeyboardEvent.KEY_UP, myKeyUp);
 			
-			populateStars();
 		}
 		
-		function populateStars():void
-		{
-			for(var i:int = 0; i < 100; i++)
-			{
-				stars.push(new Point(  int(Math.random() * bmd2.width), int(Math.random() * bmd2.height)/2));
-			}
-		}
-		
-		function drawStars():void
-		{
-			for(var i:int = 0; i < stars.length; i++)
-			{
-				var star:Point = stars[i];
-				star.x -= TURN_SPEED;
-				
-				if(star.x < 0)
-				{
-					star.x = bmd2.width + star.x;
-				}
-				
-				if(star.x > bmd2.width)
-				{
-					star.x -= bmd2.width;
-				}
-				
-				
-				bmd2.setPixel(star.x , star.y, 0xffffff);
-				
-				
-				
-				
-			}
-		}
-
-
+	
 
 
 		function update(e: Event): void {
@@ -127,6 +92,7 @@
 
 			mc2.graphics.clear();
 			mc2.graphics.lineStyle(1);
+			mc2.graphics.drawCircle(pos.x, pos.y, 3);
 			mc2.graphics.moveTo(bottomLeftPX.x, bottomLeftPX.y);
 			mc2.graphics.lineTo(bottomLeftPX.x, bottomLeftPX.y);
 			mc2.graphics.lineTo(topLeftPX.x, topLeftPX.y);
@@ -143,7 +109,6 @@
 
 			//var time:Number = getTimer();
 			bmd2.fillRect(new Rectangle(0, 0, bmd2.width, bmd2.height/2), 0x000000);
-			//drawStars();
 			//bmd2.copyPixels(mountains, new Rectangle(0,0,mountains.width, mountains.height), new Point(angle,125), null, null, true);
 			
 			//return;
@@ -261,9 +226,6 @@
 
 
 
-
-
-
 		function drawImage(o: Object): void {
 			var p1: Point = o.topLeft;
 			var p2: Point = o.topRight;
@@ -298,37 +260,61 @@
 
 			var startRowCos: Number = -1;
 			var startRowSin: Number = -1;
+			var startrowSinDist:Number;
+			var startrowCosDist:Number;
 
 			var endRowCos: Number = -1;
 			var endRowSin: Number = -1;
+			var endrowSinDist:Number;
+			var endrowCosDist:Number;
+			
 			
 			var halfBd:Number = bmd2.height /2;
+			var o = false;
 
 
 			for (var row: Number = 1; row < bmd2.height; row++) {
-				var rowPer: Number = 1 - (bmd2.height / row); //row / bmd2.height;//
+				//looks best but does not make sense!
+				//var rowPer: Number = 1 - (bmd2.height / row);
+				//naive and looks like shit
+				//var rowPer: Number =  (row / bmd2.height);
+				//this makes most sense
+				var rowPer: Number = easeOutQuint(row/2,  0 , 1, bmd2.height);
 				var halfRow:int = row/2;
-				//var rowPer: Number = easeOutQuint(row,  0 , 1, bmd2.height);
+				//
 				//trace(rowPer);
 
+				//we are getting an angle from the far to the near, not near to far. hence 0 percent is exactly on FAR
 				if (startRowCos == -1) {
 					startRowCos = Math.cos(startRowsAngle);
 					startRowSin = Math.sin(startRowsAngle);
+					startrowSinDist = (startRowSin * startRowsLen);
+					startrowCosDist = (startRowCos * startRowsLen);
 				}
 
-				var currStartX: int = (startRowCos * startRowsLen) * rowPer;
-				var currStartY: int = (startRowSin * startRowsLen) * rowPer;
+				//rows in the trapeze start at the distance and move towards the player
+				var currStartX: int = startrowCosDist * rowPer;
+				var currStartY: int = startrowSinDist * rowPer;
 				//add the offset of the start pixel
 				currStartX += fromPStart.x;
 				currStartY += fromPStart.y;
 
+				if(!o)
+				{
+					o = true;
+					mc2.graphics.drawCircle(currStartX, currStartY, 3);
+				}
+				
+
 				if (endRowCos == -1) {
 					endRowCos = Math.cos(endRowsAngle);
 					endRowSin = Math.sin(endRowsAngle);
+					endrowSinDist = (endRowSin * endRowsLen);
+					endrowCosDist = (endRowCos * endRowsLen);
 				}
 
-				var currEndX: Number = (endRowCos * endRowsLen) * rowPer;
-				var currEndY: Number = (endRowSin * endRowsLen) * rowPer;
+				var currEndX: Number = endrowCosDist * rowPer;
+				var currEndY: Number = endrowSinDist * rowPer;
 				//add the offset of the start pixel
 				currEndX += toPStart.x;
 				currEndY += toPStart.y;
@@ -341,17 +327,21 @@
 
 				var COS: Number = -1;
 				var SIN: Number = -1;
+				var SIN_dist:Number;
+				var COS_dist:Number ;
 
 				for (var col: Number = 0; col < bmd2.width; col++) {
 
 					if (COS == -1) {
 						COS = Math.cos(slopeStartToEndAngle);
 						SIN = Math.sin(slopeStartToEndAngle);
+						SIN_dist = SIN * distanceBetweenCurrs;
+						COS_dist = COS * distanceBetweenCurrs;
 					}
 
 					var colPer: Number = col / bmd2.width;
-					var currColX: int = (COS * distanceBetweenCurrs) * colPer;
-					var currColY: int = (SIN * distanceBetweenCurrs) * colPer;
+					var currColX: int = COS_dist * colPer;
+					var currColY: int = SIN_dist * colPer;
 					currColX += cp1.x;
 					currColY += cp1.y;
 					var pixel: uint = bd.getPixel(currColX, currColY);
